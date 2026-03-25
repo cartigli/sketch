@@ -17,21 +17,22 @@ def load_vid():
 
 
 def hypo(a, b):
-     """Returns the Euclidean distance between two coordinate pairs."""
+     """Returns the Euclidean distance between two coordinates."""
      x = b[0] - a[0]
      y = b[1] - a[1]
      return math.sqrt(x**2 + y**2)
 
 
 def demi(a, b):
-     """Finds the mdipoint of a given line."""
+     """Finds the mdipoint of two coordinates."""
      x = (a[0] + b[0]) // 2
      y = (a[1] + b[1]) // 2
      return (x, y)
 
 
 def verify(a, b):
-     tru = float(input("Enter the distance between these points (<1.0 mm): "))
+     """Verify that the points chosen and their distance are acceptable."""
+     tru = float(input("Enter the distance between these points (mm): "))
      lmk_dist = hypo(a, b)
      pix_per = lmk_dist / tru
 
@@ -50,35 +51,39 @@ def artist(f, lines):
           cv2.putText(f, vrai, demi(c, d), cv2.FONT_HERSHEY_SIMPLEX, .5, (0, 0, 255), 1)
 
 
-def mouse_event(click, x, y, flag, params):
-     """Handle & check mouse events for relevant clicks."""
-     if click != 1:
-          return
-     points.append((x, y))
-
-
 def watch_clicks(cap, win, lines=None):
      """Watches the video feed & tracks mouse events; records left clicks' positions."""
-     defaults = [None, None]
-     global points
      points = []
+     live = None
+
+     def mouse_event(click, x, y, flag, params):
+          """Handle & check mouse events for relevant clicks."""
+          if event == cv2.EVENT_LBUTTONDOWN:
+               points.append((x, y))
+          elif event == cv2.EVENT_MOUSEMOVE:
+               live = (x, y)
 
      cv2.setMouseCallback(win, mouse_event)
 
      while len(points) < 2:
+          while len(points) < 1:
           ret, f = cap.read()
           if not ret:
                print("failed to grab frame")
-               return defaults
+               return (None, None)
 
           if lines:
                artist(f, lines)
 
+          if len(points) == 1 and live:
+               cv2.line(f, live[0], live[1], (0, 0, 250), 2)
+
           cv2.imshow(win, f)
+
           key = cv2.waitKey(1)
           if key == ord('q') or key == 27:
                print("user quit")
-               return defaults
+               return (None, None)
 
      return points
 
@@ -117,6 +122,7 @@ def main():
 
                eucl = hypo(c, d)
                vrai = f"{(eucl / pix_per):.3f} mm"
+
                print(f"true distance: {vrai}")
                lines.append((c, d, vrai))
 
