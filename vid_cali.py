@@ -53,11 +53,12 @@ def artist(f, lines):
 
 def watch_clicks(cap, win, lines=None):
      """Watches the video feed & tracks mouse events; records left clicks' positions."""
-     points = []
-     live = None
+     points = [None]
+     live = [None]
 
-     def mouse_event(click, x, y, flag, params):
+     def mouse_event(event, x, y, flag, params):
           """Handle & check mouse events for relevant clicks."""
+          nonlocal live
           if event == cv2.EVENT_LBUTTONDOWN:
                points.append((x, y))
           elif event == cv2.EVENT_MOUSEMOVE:
@@ -66,7 +67,6 @@ def watch_clicks(cap, win, lines=None):
      cv2.setMouseCallback(win, mouse_event)
 
      while len(points) < 2:
-          while len(points) < 1:
           ret, f = cap.read()
           if not ret:
                print("failed to grab frame")
@@ -76,7 +76,7 @@ def watch_clicks(cap, win, lines=None):
                artist(f, lines)
 
           if len(points) == 1 and live:
-               cv2.line(f, live[0], live[1], (0, 0, 250), 2)
+               cv2.line(f, points[0], live, (0, 0, 250), 2)
 
           cv2.imshow(win, f)
 
