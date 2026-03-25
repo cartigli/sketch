@@ -44,11 +44,11 @@ def verify(a, b):
      return pix_per
 
 
-def artist(f, lines):
-     """Sketches all the connections between clicked-coordinates."""
-     for c, d, vrai in lines:
-          cv2.line(f, c, d, (0, 0, 255), 3)
-          cv2.putText(f, vrai, demi(c, d), cv2.FONT_HERSHEY_SIMPLEX, .5, (0, 0, 255), 1)
+def artist(bg, x, y, text=None):
+     """Draws lines between coordinates pairs, with text if present."""
+     cv2.line(bg, x, y, (0, 0, 255), 2)
+     if text:
+          cv2.putText(bg, text, demi(x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
 
 
 def watch_clicks(cap, win, pix_per, lines=None):
@@ -61,6 +61,11 @@ def watch_clicks(cap, win, pix_per, lines=None):
           nonlocal live
           if event == cv2.EVENT_LBUTTONDOWN:
                points.append((x, y))
+          elif event == cv2.EVENT_RBUTTONDOWN:
+               if points:
+                    points.clear() # erase last selection
+               elif lines:
+                    lines.pop() # clear the last created line
           elif event == cv2.EVENT_MOUSEMOVE:
                live = (x, y)
 
@@ -73,14 +78,12 @@ def watch_clicks(cap, win, pix_per, lines=None):
                return (None, None)
 
           if lines:
-               # artist(f, lines)
                for c, d, vrai in lines:
-                    cv2.line(f, c, d, (0, 0, 255), 2)
-                    cv2.putText(f, vrai, demi(c, d), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
-
+                    artist(f, c, d, vrai)
           if len(points) == 1 and live and pix_per:
-               cv2.line(f, points[0], live, (0, 0, 250), 2)
-               cv2.putText(f, f"{(hypo(points[0], live)/pix_per):.3f} mm", demi(points[0], live), cv2.FONT_HERSHEY_SIMPLEX, .5, (0, 0, 255), 1)
+               artist(f, points[0], live, text=f"{(hypo(points[0], live)/pix_per):.3f} mm")
+          elif len(points) == 1 and live and not pix_per:
+               artist(f, points[0], live)
 
           cv2.imshow(win, f)
 
@@ -108,7 +111,7 @@ def main():
           return
 
      with wm("Select two points w.a known distance: ") as win:
-          a, b = watch_clicks(cap, win, pix_per, lines=None)
+          a, b = watch_clicks(cap, win, pix_per)
           cap.release() # close & reload so the window doesn't need to be closed/moved
           if not a:
                return
