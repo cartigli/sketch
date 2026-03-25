@@ -53,7 +53,7 @@ def artist(f, lines):
 
 def watch_clicks(cap, win, lines=None):
      """Watches the video feed & tracks mouse events; records left clicks' positions."""
-     points = [None]
+     points = []
      live = [None]
 
      def mouse_event(event, x, y, flag, params):
