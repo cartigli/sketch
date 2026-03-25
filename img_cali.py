@@ -9,29 +9,15 @@ def load_img(src):
      """Load an image from the disk into memory."""
      if not os.path.exists(src):
           print(f"No image found at {src}")
-          return None, 0, 0
+          return None
 
      img = cv2.imread(src)
      if img is None:
-          return None, 0, 0
+          return None
 
      h, w = img.shape[:2]
      print(f"Loaded image w.dims: {w}x{h}")
-     return img, h, w
-
-
-def load_vid():
-     """Load a video feed from a cam into memory."""
-     cap = cv2.VideoCapture(0)
-
-     ret, f = cap.read()
-     if not ret:
-          print("Failed to grab frame.")
-          return None
-
-     h, w = frame.shape[:2]
-     print(f"Loaded video feed w.dims: {w}x{h}")
-     return cap
+     return img
 
 
 def hypo(a, b):
@@ -71,51 +57,12 @@ def get_clicks(img, win):
      return points
 
 
-def watch_clicks(cap, win):
-     """Watches the video feed & tracks mouse events; records left clicks' positions."""
-     points = []
-
-     def mouse_event(click, x, y, flag, params):
-          if click != 1:
-               return
-          points.append((x, y))
-
-     cv2.setMouseCallback(win, mouse_event)
-
-     while len(points) < 2:
-          ret, f = cap.read()
-          if not ret:
-               print(f"Failed to grab frame")
-               points = [None, None]
-               break
-
-          cv2.imshow(win, f)
-          cv2.waitKey(1)
-
-          if key == ord('q'):
-               points = [None, None]
-               break
-
-     return points
-
-
 def cv_draw(img, c, d, vrai, win):
      """Draws a line between two points of an image."""
      cv2.line(img, c, d, (0, 0, 255), 3)
      cv2.putText(img, vrai, demi(c, d), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 5)
 
      cv2.imshow(win, img)
-     cv2.waitKey(1)
-     return
-
-
-def cv_sketch(cap, c, d, vrai, win):
-     """Draws a line between two coordinates on a live video feed."""
-     ret, f = cap.read()
-     cv2.line(f, c, d, (0, 0, 255), 3)
-     cv2.putText(f, vrai, demi(c, d), cv2.DONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 5)
-
-     cv2.imshow(win, f)
      cv2.waitKey(1)
      return
 
@@ -128,48 +75,33 @@ def wm(win):
      yield win
      cv2.destroyAllWindows()
 
-@contextmanager
-def wvm(win, cap):
-     """Context manager for an video feed's window being created & destroyed upon return."""
-     cv2.namedWindow(win, flags=cv2.WINDOW_FULLSCREEN)
-     cv2.setWindowProperty(win, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-     yield win
-     cap.release()
-     cv2.destroyAllWindows()
-
 
 def main(src):
-     # img, h, w = load_img(src)
-     # if img is None:
-          # return
-     cap = load_vid()
-     if cap is None:
+     minn = 1.0
+
+     img = load_img(src)
+     if not img:
           return
 
-     with wvm("Select two points w.a known distance: ") as win:
-          # a, b = get_clicks(img, win)
-          a, b = watch_clicks(cap, win)
+     with wm("Select two points w.a known distance: ") as win:
+          a, b = get_clicks(img, win)
           if not a:
                return
 
-          tru = float(input("Enter the true distance between these points (mm): "))
-          if tru <= 0:
-               print("Cannot calibrate on distance of 0 mm or less")
-               return
-
           lmk_dist = hypo(a, b)
-          if lmk_dist <= 1.0:
-               print("Less than 1 pixel is too small of a calibration region")
+
+          tru = float(input("Enter the true distance between these points (> 1.0 mm): "))
+
+          if tru <= minn or lmk_dist <= minn*10:
+               print("too small of a calibration region")
                return
 
           pix_per = lmk_dist / tru
           print(f"Calibrated for: {pix_per:.3f} pixels per mm ({pix_per:.3f}=1mm)")
 
-     with wvm("Choose two points to find their distance: ") as win:
+     with wm("Choose two points to find their distance: ") as win:
           while True:
-               # c, d = get_clicks(img, win)
-               c, d = watch_clicks(cap, win)
-
+               c, d = get_clicks(img, win)
                if not c:
                     break
 
