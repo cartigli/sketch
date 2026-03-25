@@ -51,10 +51,10 @@ def artist(f, lines):
           cv2.putText(f, vrai, demi(c, d), cv2.FONT_HERSHEY_SIMPLEX, .5, (0, 0, 255), 1)
 
 
-def watch_clicks(cap, win, lines=None):
+def watch_clicks(cap, win, pix_per, lines=None):
      """Watches the video feed & tracks mouse events; records left clicks' positions."""
      points = []
-     live = [None]
+     live = None
 
      def mouse_event(event, x, y, flag, params):
           """Handle & check mouse events for relevant clicks."""
@@ -73,10 +73,14 @@ def watch_clicks(cap, win, lines=None):
                return (None, None)
 
           if lines:
-               artist(f, lines)
+               # artist(f, lines)
+               for c, d, vrai in lines:
+                    cv2.line(f, c, d, (0, 0, 255), 2)
+                    cv2.putText(f, vrai, demi(c, d), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
 
-          if len(points) == 1 and live:
+          if len(points) == 1 and live and pix_per:
                cv2.line(f, points[0], live, (0, 0, 250), 2)
+               cv2.putText(f, f"{(hypo(points[0], live)/pix_per):.3f} mm", demi(points[0], live), cv2.FONT_HERSHEY_SIMPLEX, .5, (0, 0, 255), 1)
 
           cv2.imshow(win, f)
 
@@ -98,12 +102,13 @@ def wm(win):
 
 
 def main():
+     pix_per = None
      cap = load_vid()
      if cap is None:
           return
 
      with wm("Select two points w.a known distance: ") as win:
-          a, b = watch_clicks(cap, win, lines=None)
+          a, b = watch_clicks(cap, win, pix_per, lines=None)
           cap.release() # close & reload so the window doesn't need to be closed/moved
           if not a:
                return
@@ -116,7 +121,7 @@ def main():
      with wm("Choose two points to find their distance: ") as win:
           lines = []
           while True:
-               c, d = watch_clicks(cap, win, lines)
+               c, d = watch_clicks(cap, win, pix_per, lines)
                if not c:
                     break
 
