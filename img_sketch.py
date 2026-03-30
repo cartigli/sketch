@@ -4,6 +4,10 @@ import math
 
 from contextlib import contextmanager
 
+"""
+Load a single image in & sketch on it.
+"""
+
 
 def load_img(src):
      """Load an image from the disk into memory."""

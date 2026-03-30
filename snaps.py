@@ -4,7 +4,7 @@ import shutil
 from contextlib import contextmanager
 
 """
-Streams a device's video feed and takes snapshots when the user presses 'x'.
+Streams a device's video feed and writes selected frames to disk (for calibration).
 """
 
 def out_mgr(out):
